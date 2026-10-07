@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="104" fill="#0F382C" />
+  <circle cx="256" cy="256" r="216" stroke="#E0A96D" stroke-width="8" stroke-dasharray="16 12" opacity="0.6"/>
+  
+  <!-- Outer Compass Points -->
+  <polygon points="256,60 270,110 256,98 242,110" fill="#E0A96D"/>
+  <polygon points="256,452 270,402 256,414 242,402" fill="#E0A96D"/>
+  <polygon points="60,256 110,270 98,256 110,242" fill="#E0A96D"/>
+  <polygon points="452,256 402,270 414,256 402,242" fill="#E0A96D"/>
+
+  <!-- Maya El Castillo Pyramid Silhouette -->
+  <path d="M128 376 H384 L360 320 H152 L128 376 Z" fill="#E0A96D"/>
+  <path d="M164 320 H348 L328 268 H184 L164 320 Z" fill="#F3C68F"/>
+  <path d="M196 268 H316 L300 220 H212 L196 268 Z" fill="#E0A96D"/>
+  <!-- Temple Top -->
+  <rect x="232" y="184" width="48" height="36" rx="4" fill="#F3C68F"/>
+  <rect x="246" y="200" width="20" height="20" rx="2" fill="#0F382C"/>
+  <!-- Central Staircase -->
+  <polygon points="244,376 268,376 264,220 248,220" fill="#B87A3E"/>
+</svg>

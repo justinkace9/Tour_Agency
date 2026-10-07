@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "Tour": {
+      "title": "Tour",
+      "description": "Licensed Cayo District eco-adventure expedition",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 50 },
+        "priceUsd": { "type": "number" },
+        "priceBzd": { "type": "number" },
+        "duration": { "type": "string", "maxLength": 100 },
+        "physicalRating": { "type": "string", "maxLength": 50 },
+        "location": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["title", "category", "priceUsd", "priceBzd", "duration", "physicalRating"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Expedition reservation and Atlantic Bank payment status",
+      "type": "object",
+      "properties": {
+        "bookingReference": { "type": "string", "maxLength": 50 },
+        "leadTraveler": { "type": "object" },
+        "pickupLocation": { "type": "string", "maxLength": 200 },
+        "tours": { "type": "array" },
+        "totalUsd": { "type": "number" },
+        "totalBzd": { "type": "number" },
+        "paymentStatus": { "type": "string", "enum": ["unpaid", "under_review", "verified", "rejected"] }
+      },
+      "required": ["bookingReference", "leadTraveler", "tours", "totalUsd", "totalBzd", "paymentStatus"]
+    },
+    "BlogPost": {
+      "title": "BlogPost",
+      "description": "Cayo District expedition guides and travel advice",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 250 },
+        "slug": { "type": "string", "maxLength": 250 },
+        "content": { "type": "string", "maxLength": 50000 },
+        "author": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["title", "slug", "content", "author"]
+    }
+  },
+  "firestore": {
+    "/tours/{tourId}": {
+      "schema": "Tour",
+      "description": "Active Cayo District tour catalog"
+    },
+    "/blog/{postId}": {
+      "schema": "BlogPost",
+      "description": "Official operator blog and gear advice"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "Reservation records and Atlantic Bank verification data"
+    }
+  }
+}

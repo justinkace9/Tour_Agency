@@ -1,0 +1,6 @@
+{
+  "name": "Cayo Eco-Tours Belize",
+  "description": "Licensed eco-adventure tour operator led by Miss Gissell Rodriguez in San Ignacio Town, Cayo District, Belize. Premier expeditions to ATM Cave, Xunantunich, Caracol, Crystal Cave, Black Hole Drop, and Tikal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,180 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. GLOBAL SAFETY NET: Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. GLOBAL SECURITY HELPER FUNCTIONS
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Check if user is a verified Admin registered in /admins/{userId} or has admin claim
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Check if user is the authenticated owner of the document
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- ENTITY VALIDATION BLUEPRINTS (Anti-Update-Gap) ---
+
+    function isValidTour(data) {
+      return data.title is string && data.title.size() <= 200 &&
+             data.category is string && data.category.size() <= 50 &&
+             data.priceUsd is number && data.priceUsd >= 0 &&
+             data.priceBzd is number && data.priceBzd >= 0 &&
+             data.duration is string && data.duration.size() <= 100 &&
+             data.physicalRating is string && data.physicalRating.size() <= 50;
+    }
+
+    function isValidBlogPost(data) {
+      return data.title is string && data.title.size() <= 250 &&
+             data.slug is string && data.slug.size() <= 250 &&
+             data.content is string && data.content.size() <= 50000 &&
+             data.author is string && data.author.size() <= 100;
+    }
+
+    function isValidBooking(data) {
+      return data.bookingReference is string && data.bookingReference.size() <= 50 &&
+             data.leadTraveler is map &&
+             data.leadTraveler.fullName is string && data.leadTraveler.fullName.size() <= 150 &&
+             data.leadTraveler.email is string && data.leadTraveler.email.size() <= 150 &&
+             data.tours is list && data.tours.size() <= 50 &&
+             data.totalUsd is number && data.totalUsd >= 0 &&
+             data.totalBzd is number && data.totalBzd >= 0 &&
+             data.paymentStatus in ['unpaid', 'under_review', 'verified', 'rejected'];
+    }
+
+    function isValidChatMessage(data) {
+      return data.text is string && data.text.size() <= 3000 &&
+             data.sender in ['customer', 'agent'] &&
+             data.timestamp is string && data.timestamp.size() <= 50;
+    }
+
+    // --- 3. TOURS COLLECTION (/tours) ---
+    // Public read for travelers exploring Cayo; Strictly restricted to Admins for create, update, delete
+    match /tours/{tourId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(tourId) && isValidTour(incoming());
+      allow update: if isAdmin() && isValidId(tourId) && isValidTour(incoming());
+      allow delete: if isAdmin() && isValidId(tourId);
+    }
+
+    // --- 4. BLOG POSTS COLLECTION (/blog) ---
+    // Public read for Cayo travel and packing advice; Strictly Admin for writes
+    match /blog/{postId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(postId) && isValidBlogPost(incoming());
+      allow update: if isAdmin() && isValidId(postId) && isValidBlogPost(incoming());
+      allow delete: if isAdmin() && isValidId(postId);
+    }
+
+    // --- 5. BOOKINGS COLLECTION (/bookings) ---
+    // Public/customer create with valid booking schema;
+    // Read: Allowed for authenticated Admins, OR customer matching leadTraveler.email or ownerId;
+    // Status updates: Restricted strictly to Admins (cannot self-verify payments)
+    match /bookings/{bookingId} {
+      allow create: if isValidId(bookingId) && isValidBooking(incoming());
+      
+      allow read: if isAdmin() || (
+        isSignedIn() && (
+          (resource.data.userId != null && resource.data.userId == request.auth.uid) ||
+          (resource.data.leadTraveler.email != null && resource.data.leadTraveler.email == request.auth.token.email)
+        )
+      );
+
+      // Customer can ONLY update receipt details (when transitioning to under_review)
+      // Admin can update status, paymentStatus, rejectionReason, and notes
+      allow update: if isValidId(bookingId) && isValidBooking(incoming()) && (
+        isAdmin() ||
+        (
+          isSignedIn() &&
+          (resource.data.userId == request.auth.uid || resource.data.leadTraveler.email == request.auth.token.email) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['receiptFileName', 'receiptFileUrl', 'uploadedAt', 'paymentStatus']) &&
+          incoming().paymentStatus == 'under_review'
+        )
+      );
+
+      allow delete: if isAdmin() && isValidId(bookingId);
+    }
+
+    // --- 6. USER PROFILES & PII ISOLATION (/users/{userId}) ---
+    // Strictly isolated: Account owner or Admin can read/write their private profile
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidId(userId);
+      allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // --- 7. CHAT THREADS & LIVE AGENT SUPPORT (/chats/{threadId}) ---
+    // Customers can access their own thread; Admins have full access for dispatch
+    match /chats/{threadId} {
+      allow read: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.customerEmail == request.auth.token.email
+        )
+      );
+
+      allow create: if isValidId(threadId) && (
+        isAdmin() || (
+          isSignedIn() && incoming().userId == request.auth.uid
+        )
+      );
+
+      allow update: if isValidId(threadId) && (
+        isAdmin() || (
+          isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.customerEmail == request.auth.token.email)
+        )
+      );
+
+      // Nested Messages Subcollection
+      match /messages/{messageId} {
+        allow read: if isAdmin() || (
+          isSignedIn() && (
+            get(/databases/$(database)/documents/chats/$(threadId)).data.userId == request.auth.uid ||
+            get(/databases/$(database)/documents/chats/$(threadId)).data.customerEmail == request.auth.token.email
+          )
+        );
+
+        allow create: if isValidId(messageId) && isValidChatMessage(incoming()) && (
+          isAdmin() || (
+            isSignedIn() && (
+              get(/databases/$(database)/documents/chats/$(threadId)).data.userId == request.auth.uid ||
+              get(/databases/$(database)/documents/chats/$(threadId)).data.customerEmail == request.auth.token.email
+            )
+          )
+        );
+      }
+    }
+
+    // --- 8. ADMIN DIRECTORY (/admins/{adminId}) ---
+    // Master gate: Only accessible and readable by verified admins
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && (request.auth.uid == adminId || isAdmin());
+      allow write: if false; // Provisioned exclusively via backend CLI or Firebase Admin SDK
+    }
+  }
+}

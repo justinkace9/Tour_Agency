@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: #0D1117;
+    color: #F8FAFC;
+    overflow-x: clip;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* Glassmorphism and specialized utilities */
+.glass-panel {
+  background: rgba(13, 17, 23, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: rgba(15, 56, 44, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(224, 169, 109, 0.18);
+}
+
+.glass-card:hover {
+  border-color: rgba(224, 169, 109, 0.45);
+}
+
+.glass-nav {
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(15, 56, 44, 0.4);
+}
+
+.glass-modal {
+  background: rgba(13, 17, 23, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(224, 169, 109, 0.25);
+}
+
+/* Custom refined scrollbars - strictly no generic OS default scrollbars */
+html,
+body {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(224, 169, 109, 0.45) #090D12 !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
+  background: #090D12 !important;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  background: rgba(224, 169, 109, 0.35) !important;
+  border-radius: 9999px !important;
+  border: 1px solid rgba(224, 169, 109, 0.2) !important;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+  background: #E0A96D !important;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(224, 169, 109, 0.35) #090D12;
+}
+
+/* Dedicated Itinerary Drawer & Custom Scroll Containers */
+.itinerary-scroll-container {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(224, 169, 109, 0.5) transparent !important;
+}
+
+.itinerary-scroll-container::-webkit-scrollbar {
+  width: 5px !important;
+  display: block !important;
+}
+
+.itinerary-scroll-container::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.itinerary-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(224, 169, 109, 0.45) !important;
+  border-radius: 9999px !important;
+}
+
+.itinerary-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #E0A96D !important;
+}
+
+/* Hide scrollbars completely for clean horizontal sliding & invisible scroll areas */
+.no-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar-thumb,
+.no-scrollbar::-webkit-scrollbar-track,
+.scrollbar-none::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar-thumb,
+.scrollbar-none::-webkit-scrollbar-track,
+[data-scrollbar="none"]::-webkit-scrollbar,
+[data-scrollbar="none"]::-webkit-scrollbar-thumb,
+[data-scrollbar="none"]::-webkit-scrollbar-track {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.no-scrollbar,
+.scrollbar-none,
+[data-scrollbar="none"] {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Mobile Safe Area Inset Support for Notches & Home Indicators */
+.safe-area-bottom {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+}
+.safe-area-top {
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+}
+
+/* Touch micro-interactions and native app behavior */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch action optimization for smooth horizontal tracks */
+.touch-pan-x {
+  touch-action: pan-x;
+}
+

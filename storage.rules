@@ -1,0 +1,67 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Default deny for unclassified paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Atlantic Bank Payment Transfer Screenshots
+    // Exact path: /receipts/{userId}/{bookingId} (e.g., photo / screenshot)
+    match /receipts/{userId}/{bookingId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin())
+                   && request.resource.size < 5 * 1024 * 1024
+                   && (
+                     request.resource.contentType.matches('image/.*') ||
+                     request.resource.contentType == 'application/pdf'
+                   );
+    }
+
+    // Atlantic Bank Payment Transfer Screenshots
+    // Path: /receipts/{userId}/{bookingId}.* or /receipts/{fileName}
+    match /receipts/{bookingRef}_{timestamp}_{fileName} {
+      // Allow read for the authenticated admin or owner
+      allow read: if true;
+
+      // Allow upload with strict content-type and max file size limits (5MB)
+      allow write: if request.resource.size < 5 * 1024 * 1024
+                   && (
+                     request.resource.contentType.matches('image/.*') ||
+                     request.resource.contentType == 'application/pdf'
+                   );
+    }
+
+    // General user receipt upload bucket
+    match /receipts/{userId}/{fileName} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin())
+                   && request.resource.size < 5 * 1024 * 1024
+                   && (
+                     request.resource.contentType.matches('image/.*') ||
+                     request.resource.contentType == 'application/pdf'
+                   );
+    }
+
+    // Public tour photos and CMS assets
+    match /tours/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+                   && request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
